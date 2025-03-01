@@ -55,6 +55,10 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   String _displayValue = '0';
+  double _firstOperand = 0;
+  String _operator = '';
+  bool _shouldResetDisplay = true;
+  bool _operationCompleted = false;
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +128,55 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget buildButton(String buttonText) {
     return ElevatedButton(
       onPressed: () {
-        // Functionality will be added later
+        setState(() {
+          // Handle different button types
+          if (buttonText == 'C') {
+            _displayValue = '0';
+            _firstOperand = 0;
+            _operator = '';
+            _shouldResetDisplay = true;
+            _operationCompleted = false;
+          } else if (buttonText == '=') {
+            if (_operator.isNotEmpty) {
+              final secondOperand = double.parse(_displayValue);
+              final result = _calculate(_firstOperand, secondOperand, _operator);
+              _displayValue = result.toString();
+              // Remove decimal point if result is a whole number
+              if (_displayValue.endsWith('.0')) {
+                _displayValue = _displayValue.substring(0, _displayValue.length - 2);
+              }
+              _operator = '';
+              _operationCompleted = true;
+            }
+          } else if (buttonText == '+' || 
+                    buttonText == '-' || 
+                    buttonText == '*' || 
+                    buttonText == '/') {
+            // Handle operator
+            if (!_operationCompleted && _operator.isNotEmpty) {
+              // Calculate previous operation if chaining calculations
+              final secondOperand = double.parse(_displayValue);
+              final result = _calculate(_firstOperand, secondOperand, _operator);
+              _displayValue = result.toString();
+              if (_displayValue.endsWith('.0')) {
+                _displayValue = _displayValue.substring(0, _displayValue.length - 2);
+              }
+            }
+            _firstOperand = double.parse(_displayValue);
+            _operator = buttonText;
+            _shouldResetDisplay = true;
+            _operationCompleted = false;
+          } else {
+            // Handle number input
+            if (_shouldResetDisplay || _displayValue == '0' || _operationCompleted) {
+              _displayValue = buttonText;
+              _shouldResetDisplay = false;
+              _operationCompleted = false;
+            } else {
+              _displayValue += buttonText;
+            }
+          }
+        });
       },
       style: ElevatedButton.styleFrom(
         shape: RoundedRectangleBorder(
@@ -139,5 +191,20 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
     );
+  }
+  
+  double _calculate(double a, double b, String operator) {
+    switch (operator) {
+      case '+':
+        return a + b;
+      case '-':
+        return a - b;
+      case '*':
+        return a * b;
+      case '/':
+        return b != 0 ? a / b : 0; // Prevent division by zero
+      default:
+        return b;
+    }
   }
 }
